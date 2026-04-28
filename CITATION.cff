@@ -1,0 +1,58 @@
+cff-version: 1.2.0
+title: "Eczema Detection Using Hybrid CNN-Transformer Architecture"
+message: "If you use this software, please cite it and the datasets listed below."
+type: software
+authors:
+  - family-names: "YourLastName"
+    given-names: "YourFirstName"
+
+references:
+  - type: dataset
+    title: "Eczema Infected + Normal"
+    url: "https://www.kaggle.com/datasets/adityush/eczema2"
+    notes: "Binary eczema classification dataset (infected vs. normal skin images). Used for training and validation."
+    authors:
+      - name: "Aditya Ush (Kaggle: adityush)"
+
+  - type: dataset
+    title: "Skin Diseases Image Dataset"
+    url: "https://www.kaggle.com/datasets/ismailpromus/skin-diseases-image-dataset"
+    notes: "Multi-class skin disease image dataset. Used for training diversity and non-eczema negative samples."
+    authors:
+      - name: "Ismail Promus (Kaggle: ismailpromus)"
+
+  - type: dataset
+    title: "Skin Disease Detection Using CNN — Input Dataset"
+    url: "https://www.kaggle.com/code/srishtisinha169/skin-disease-detection-using-cnn/input"
+    notes: "Dataset sourced via Kaggle notebook by Srishti Sinha. Used for supplementary training images."
+    authors:
+      - name: "Srishti Sinha (Kaggle: srishtisinha169)"
+
+  - type: dataset
+    title: "DermNet Skin Disease Image Dataset"
+    url: "https://www.kaggle.com/datasets/shubhamgoel27/dermnet"
+    notes: "Kaggle mirror of DermNet NZ image library. Used for training and testing across multiple skin conditions."
+    authors:
+      - name: "Shubham Goel (Kaggle: shubhamgoel27)"
+      - name: "DermNet NZ"
+
+  - type: dataset
+    title: "DermNet NZ — Atopic Dermatitis Images"
+    url: "https://dermnetnz.org/images/atopic-dermatitis-images"
+    notes: "Clinical eczema/atopic dermatitis images from DermNet NZ, a peer-reviewed dermatology resource. Used for test set supplementation."
+    authors:
+      - name: "DermNet NZ"
+
+  - type: dataset
+    title: "Dupixent Atopic Dermatitis Skin Gallery"
+    url: "https://www.dupixent.com/atopicdermatitis/about/skin-gallery"
+    notes: "Patient skin gallery from Dupixent (Sanofi/Regeneron). Used for diverse real-world eczema presentation reference images."
+    authors:
+      - name: "Sanofi and Regeneron Pharmaceuticals"
+
+  - type: dataset
+    title: "Arsenic Skin Disease Dataset"
+    url: "https://www.kaggle.com/datasets/armaanoajay/arsenic-skin"
+    notes: "Skin disease images including arsenic-related conditions. Used to improve model generalization across non-eczema skin presentations."
+    authors:
+      - name: "Armaan O. Ajay (Kaggle: armaanoajay)"
