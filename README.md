@@ -20,11 +20,9 @@ pip install tensorflow keras numpy matplotlib seaborn scikit-learn
 git clone https://github.com/yourusername/eczema-cnn.git
 cd eczema-cnn
 pip install tensorflow keras numpy matplotlib seaborn scikit-learn
-
----
+```
 
 ## Data Sources
-
 This project was trained and evaluated on a curated dataset of ~2000 images drawn from 7 publicly available sources, selected to ensure representation across diverse skin tones and eczema presentations.
 
 | # | Dataset | Link |
