@@ -39,7 +39,7 @@ class EczemViT(nn.Module):
 
 # Custom Dataset for loading images from folder structure
 class EczemDataset(Dataset):
-    def __init__(self, root_dir, processor, label_mapping={'normal': 0, 'eczema': 1}):
+    def __init__(self, root_dir, processor, label_mapping={'Normal': 0, 'Eczema': 1}):
         self.root_dir = root_dir
         self.processor = processor
         self.images = []
@@ -72,15 +72,22 @@ processor = ViTImageProcessor.from_pretrained("google/vit-base-patch16-224")
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Dataset paths
-train_dir = "/Users/mzhong/Downloads/Machine-Learning-in-Eczema-Detection-main-main/dataset/train_data"
-test_dir = "/Users/mzhong/Downloads/Machine-Learning-in-Eczema-Detection-main-main/dataset/test_data"
+train_dir = "/Users/nolanyu/Machine-Learning-in-Eczema-Detection-main/dataset/train_data"
+test_dir = "/Users/nolanyu/Machine-Learning-in-Eczema-Detection-main/dataset/test_data"
+
+from torch.utils.data import random_split
 
 # Create datasets
-train_dataset = EczemDataset(train_dir, processor)
+full_train_dataset = EczemDataset(train_dir, processor)
 test_dataset = EczemDataset(test_dir, processor)
+
+val_size = int(0.2 * len(full_train_dataset))
+train_size = len(full_train_dataset) - val_size
+train_dataset, val_dataset = random_split(full_train_dataset, [train_size, val_size])
 
 # Create dataloaders
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
 test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
 # Initialize model
@@ -107,12 +114,44 @@ def train_epoch(model, train_loader, criterion, optimizer, device):
     
     return total_loss / len(train_loader)
 
-# Training loop
-num_epochs = 5
-print(f"\nTraining ViT model for {num_epochs} epochs...")
-for epoch in range(num_epochs):
-    avg_loss = train_epoch(model, train_loader, criterion, optimizer, device)
-    print(f"Epoch {epoch+1}/{num_epochs} - Loss: {avg_loss:.4f}")
+def validate_epoch(model, val_loader, criterion, device):
+    model.eval()
+    total_loss = 0
+    with torch.no_grad():
+        for pixel_values, labels in val_loader:
+            pixel_values = pixel_values.to(device)
+            labels = labels.to(device).unsqueeze(1)
+            outputs = model(pixel_values)
+            loss = criterion(outputs, labels)
+            total_loss += loss.item()
+    return total_loss / len(val_loader)
+
+# Training loop with early stopping
+np.random.seed(42)
+torch.manual_seed(42)
+
+max_epochs = 30
+patience = 5
+best_val_loss = float('inf')
+patience_counter = 0
+
+print(f"\nTraining ViT model for up to {max_epochs} epochs...")
+for epoch in range(max_epochs):
+    train_loss = train_epoch(model, train_loader, criterion, optimizer, device)
+    val_loss = validate_epoch(model, val_loader, criterion, device)
+    print(f"Epoch {epoch+1}/{max_epochs} - Train Loss: {train_loss:.4f} - Val Loss: {val_loss:.4f}")
+
+    if val_loss < best_val_loss:
+        best_val_loss = val_loss
+        patience_counter = 0
+        torch.save(model.state_dict(), 'best_vit_model.pt')
+    else:
+        patience_counter += 1
+        if patience_counter >= patience:
+            print(f"Early stopping at epoch {epoch+1}")
+            break
+
+model.load_state_dict(torch.load('best_vit_model.pt'))
 
 # Evaluation function
 def evaluate_model(model, test_loader, device, model_name="ViT-B/16"):

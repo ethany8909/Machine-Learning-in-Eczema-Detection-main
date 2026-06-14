@@ -55,7 +55,7 @@ def build_eczema_cnn(input_shape=(img_height, img_width, 3)):
 
     model.compile(optimizer='adam',
                   loss='binary_crossentropy',
-                  metrics=['accuracy'])
+                  metrics=['accuracy', tf.keras.metrics.AUC(name='auc')])
 
     return model
 
@@ -66,7 +66,7 @@ model = build_eczema_cnn()
 model.summary()
 
 # Load training and validation data
-train_dir = "/Users/mzhong/Downloads/Machine-Learning-in-Eczema-Detection-main-main/dataset/train_data"
+train_dir = "/Users/nolanyu/Machine-Learning-in-Eczema-Detection-main/dataset/train_data"
 
 train_ds = tf.keras.utils.image_dataset_from_directory(
   train_dir,
@@ -85,7 +85,7 @@ val_ds = tf.keras.utils.image_dataset_from_directory(
   batch_size=batch_size)
 
 #Load test data
-test_dir = "/Users/mzhong/Downloads/Machine-Learning-in-Eczema-Detection-main-main/dataset/test_data"
+test_dir = "/Users/nolanyu/Machine-Learning-in-Eczema-Detection-main/dataset/test_data"
 
 test_ds = tf.keras.utils.image_dataset_from_directory(
     test_dir,
@@ -102,13 +102,18 @@ train_ds = train_ds.cache().shuffle(1000).prefetch(buffer_size=AUTOTUNE)
 val_ds = val_ds.cache().prefetch(buffer_size=AUTOTUNE)
 
 
+np.random.seed(42)
+tf.random.set_seed(42)
+
+CALLBACKS = [tf.keras.callbacks.EarlyStopping(
+    monitor='val_loss', patience=5, restore_best_weights=True, verbose=1)]
+
 # Train the model
 history = model.fit(
     train_ds,
     validation_data=val_ds,
-    epochs=1,
-    steps_per_epoch=len(train_ds),
-    validation_steps=len(val_ds)
+    epochs=30,
+    callbacks=CALLBACKS
 )
 
 def evaluate_model(model, dataset, model_name):

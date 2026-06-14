@@ -1,6 +1,6 @@
 #Import necessary libraries
-import keras
 import tensorflow as tf
+keras = tf.keras
 
 #Import Scikit-learn for evaluation metrics
 import numpy as np
@@ -32,22 +32,44 @@ def build_transfer_cnn(input_shape=(img_height, img_width, 3)):
     base_model.trainable = False  # Freeze base initially
 
     model = models.Sequential([
+        data_augmentation,
         base_model,
         layers.GlobalAveragePooling2D(),
         layers.Dense(128, activation='relu'),
         layers.Dropout(0.5),
         layers.Dense(1, activation='sigmoid')
-    ])
-    model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+    ]) 
+    model.compile(optimizer='adam', loss='binary_crossentropy',
+                  metrics=['accuracy', tf.keras.metrics.AUC(name='auc')])
     return model
 
 # Build and display the model
 model = build_transfer_cnn()
 model.summary()
+np.random.seed(42)
+tf.random.set_seed(42)
 
+train_dir = "/Users/nolanyu/Machine-Learning-in-Eczema-Detection-main/dataset/train_data"
+
+train_ds = tf.keras.utils.image_dataset_from_directory(
+    train_dir, validation_split=0.2, subset="training", seed=123,
+    image_size=(img_height, img_width), batch_size=batch_size, label_mode='binary')
+
+val_ds = tf.keras.utils.image_dataset_from_directory(
+    train_dir, validation_split=0.2, subset="validation", seed=123,
+    image_size=(img_height, img_width), batch_size=batch_size, label_mode='binary')
+
+AUTOTUNE = tf.data.AUTOTUNE
+train_ds = train_ds.cache().shuffle(1000).prefetch(buffer_size=AUTOTUNE)
+val_ds = val_ds.cache().prefetch(buffer_size=AUTOTUNE)
+
+CALLBACKS = [tf.keras.callbacks.EarlyStopping(
+    monitor='val_loss', patience=5, restore_best_weights=True, verbose=1)]
+
+model.fit(train_ds, validation_data=val_ds, epochs=30, callbacks=CALLBACKS)
 # ========== TESTING SECTION ==========
 # Load test data (same as train.py)
-test_dir = "/Users/mzhong/Downloads/Machine-Learning-in-Eczema-Detection-main-main/dataset/test_data"
+test_dir = "/Users/nolanyu/Machine-Learning-in-Eczema-Detection-main/dataset/test_data"
 
 test_ds = tf.keras.utils.image_dataset_from_directory(
     test_dir,
