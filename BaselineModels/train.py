@@ -124,7 +124,7 @@ def evaluate_model(model, dataset, model_name):
     print(f"\n===== {model_name} =====")
     print(f"Accuracy:  {accuracy_score(y_true, y_pred):.4f}")
     print(f"AUC-ROC:   {roc_auc_score(y_true, y_pred_probs):.4f}")
-    print(classification_report(y_true, y_pred, target_names=["Normal", "Eczema"]))
+    print(classification_report(y_true, y_pred, target_names=["Eczema", "Normal"]))
 
     cm = confusion_matrix(y_true, y_pred)
     plt.figure(figsize=(5, 4))
