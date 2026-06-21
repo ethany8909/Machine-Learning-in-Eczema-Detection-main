@@ -34,5 +34,6 @@ This project was trained and evaluated on a curated dataset of ~2000 images draw
 | 5 | DermNet NZ — Atopic Dermatitis Images | [DermNet NZ](https://dermnetnz.org/images/atopic-dermatitis-images) |
 | 6 | Dupixent Atopic Dermatitis Skin Gallery | [Dupixent](https://www.dupixent.com/atopicdermatitis/about/skin-gallery) |
 | 7 | Arsenic Skin Disease Dataset | [Kaggle](https://www.kaggle.com/datasets/armaanoajay/arsenic-skin) |
+| 8 | Skin Disease and Normal Skin Dataset | [Kaggle](https://www.kaggle.com/datasets/lysaapriani/skin-disease-and-normal-skin-dataset) |
 
 See [DATASETS.md](./DATASETS.md) for full attribution, license notes, and details on how each dataset was used.
