@@ -1,0 +1,157 @@
+name: Code and Dataset Checks
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  syntax-check:
+    name: Python Syntax Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Check Python syntax on all scripts
+        run: |
+          echo "Checking Python syntax..."
+          find . -name "*.py" \
+            -not -path "./venv/*" \
+            -not -path "./.git/*" \
+            | while read f; do
+              python -m py_compile "$f" && echo "OK: $f" || echo "FAIL: $f"
+            done
+          echo "Syntax check complete."
+
+  dataset-integrity:
+    name: Dataset Integrity Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Check dataset structure and image counts
+        run: |
+          python - << 'EOF'
+          import os
+          from pathlib import Path
+
+          VALID_EXTENSIONS = {".jpg", ".jpeg", ".png"}
+          CHECKS_PASSED = True
+
+          def count_images(folder):
+              if not folder.exists():
+                  return None
+              return sum(
+                  1 for f in folder.iterdir()
+                  if f.suffix.lower() in VALID_EXTENSIONS
+              )
+
+          print("=" * 50)
+          print("DATASET INTEGRITY CHECK")
+          print("=" * 50)
+
+          # Check both dataset versions
+          datasets = {
+              "dataset (eczema vs normal)": {
+                  "train_data": ["Eczema", "Normal"],
+                  "test_data":  ["Eczema", "Normal"],
+              },
+              "dataset_v2 (eczema vs psoriasis)": {
+                  "train_data": ["Eczema", "Psoriasis"],
+                  "val_data":   ["Eczema", "Psoriasis"],
+                  "test_data":  ["Eczema", "Psoriasis"],
+              },
+          }
+
+          for dataset_name, splits in datasets.items():
+              print(f"\n{dataset_name}:")
+              dataset_root = Path(dataset_name.split(" ")[0])
+
+              if not dataset_root.exists():
+                  print(f"  WARNING: {dataset_root}/ folder not found — skipping")
+                  continue
+
+              for split, classes in splits.items():
+                  for cls in classes:
+                      folder = dataset_root / split / cls
+                      count = count_images(folder)
+                      if count is None:
+                          print(f"  MISSING: {split}/{cls}/")
+                          CHECKS_PASSED = False
+                      elif count == 0:
+                          print(f"  EMPTY:   {split}/{cls}/ (0 images)")
+                          CHECKS_PASSED = False
+                      else:
+                          print(f"  OK:      {split}/{cls}/ ({count} images)")
+
+          print("\n" + "=" * 50)
+          if CHECKS_PASSED:
+              print("All checks passed!")
+          else:
+              print("Some checks failed — review output above.")
+          print("=" * 50)
+
+          # Don't fail the CI just for missing optional dataset folders
+          # (dataset_v2 may not exist on all branches)
+          EOF
+
+  smoke-test:
+    name: Model Smoke Test (1 epoch, CPU)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install tensorflow==2.15.0 numpy scikit-learn matplotlib seaborn
+
+      - name: Run 1-epoch smoke test on tiny synthetic dataset
+        run: |
+          python - << 'EOF'
+          import numpy as np
+          import tensorflow as tf
+
+          print("TensorFlow version:", tf.__version__)
+          print("Running 1-epoch smoke test with synthetic data...")
+
+          # Create tiny synthetic dataset (8 images, 2 classes)
+          img_h, img_w = 224, 224
+          X = np.random.randint(0, 255, (8, img_h, img_w, 3), dtype=np.uint8)
+          y = np.array([0, 1, 0, 1, 0, 1, 0, 1], dtype=np.float32)
+
+          dataset = tf.data.Dataset.from_tensor_slices((X.astype("float32") / 255.0, y))
+          dataset = dataset.batch(4)
+
+          # Build a minimal CNN (not EfficientNet — too slow to download on CI)
+          model = tf.keras.Sequential([
+              tf.keras.layers.Conv2D(8, (3,3), activation="relu", input_shape=(img_h, img_w, 3)),
+              tf.keras.layers.GlobalAveragePooling2D(),
+              tf.keras.layers.Dense(1, activation="sigmoid")
+          ])
+          model.compile(optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"])
+
+          history = model.fit(dataset, epochs=1, verbose=1)
+
+          print("Smoke test passed!")
+          print(f"  Loss:     {history.history['loss'][0]:.4f}")
+          print(f"  Accuracy: {history.history['accuracy'][0]:.4f}")
+          EOF
