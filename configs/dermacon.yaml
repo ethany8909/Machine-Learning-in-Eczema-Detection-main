@@ -1,0 +1,63 @@
+# DermaFair configuration — DermaCon-IN, eczema vs. psoriasis
+run_name: dermacon_eczema_psoriasis_v1
+seed: 42
+
+data:
+  raw_dir: data/raw/dermacon
+  processed_dir: data/processed
+  metadata_csv: data/raw/dermacon/metadata.csv
+  image_col: image_path
+  patient_col: patient_id          # used for patient-level splitting (set null if unavailable)
+  label_col: diagnosis
+  positive_class: eczema           # binary task: eczema (1) vs. psoriasis (0)
+  negative_class: psoriasis
+  sensitive_attr: fitzpatrick      # also supports: monk
+  fitzpatrick_bands: [3, 4, 5, 6]  # DermaCon-IN covers FST 3-6 (no 1-2)
+  metadata_features: [age, body_region, sex, scaling, erythema, lichenification]
+
+split:
+  train: 0.70
+  val: 0.15
+  test: 0.15
+  stratify_by: [label, fitzpatrick]   # joint stratification
+
+preprocess:
+  image_size: 224
+  normalize_mean: [0.485, 0.456, 0.406]
+  normalize_std: [0.229, 0.224, 0.225]
+  augment:
+    horizontal_flip: true
+    rotation_degrees: 15
+    color_jitter: 0.1     # keep mild — heavy jitter destroys skin-tone signal under study
+
+train:
+  architectures: [custom_resnet50, resnet50, vit_b16, hybrid]
+  epochs: 50
+  batch_size: 32
+  lr: 1.0e-4
+  weight_decay: 1.0e-4
+  optimizer: adam
+  early_stopping_patience: 10
+  class_imbalance: weighted_loss    # or: balanced_sampler
+  device: cuda                      # falls back to cpu automatically
+
+fusion:
+  best_image_backbone: auto         # auto = pick highest val-balanced-accuracy
+  metadata_model: mlp               # logistic | mlp
+  strategies: [late_fusion, gate_network]
+  gate:
+    hidden_dim: 128
+    freeze_image_backbone: false
+
+fairness:
+  metrics: [accuracy, sensitivity, specificity, f1]
+  n_bootstrap: 1000
+  alpha: 0.05
+  fairness_score: one_minus_maxgap_over_acc
+
+explainability:
+  grad_cam: true
+  samples_per_tone: 5
+
+output:
+  dir: results

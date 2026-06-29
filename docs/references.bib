@@ -1,0 +1,283 @@
+% =====================================================================
+% DermaFair — Reference Library
+% Fairness-aware multimodal eczema-psoriasis differential diagnosis
+%
+% Import into Zotero: File > Import > this .bib file
+% Overleaf: drop into your project and \bibliography{references}
+%
+% Organized by theme:
+%   [A] Primary anchors (gap-defining)
+%   [B] Dataset
+%   [C] Fairness in dermatology AI
+%   [D] Eczema/psoriasis architecture comparison
+%   [E] Multimodal fusion in dermatology
+%   [F] Fairness methods & metrics (general)
+%   [G] Explainability
+% =====================================================================
+
+
+% ---------------------------------------------------------------------
+% [A] PRIMARY ANCHORS — the gap your paper addresses
+% ---------------------------------------------------------------------
+
+@article{groh2024deeplearning,
+  title   = {Deep learning-aided decision support for diagnosis of skin disease across skin tones},
+  author  = {Groh, Matthew and Badri, Omar and Daneshjou, Roxana and Koochek, Arash and Harris, Caleb and Soenksen, Luis R. and Doraiswamy, P. Murali and Picard, Rosalind},
+  journal = {Nature Medicine},
+  volume  = {30},
+  number  = {2},
+  pages   = {573--583},
+  year    = {2024},
+  doi     = {10.1038/s41591-023-02728-3},
+  note    = {Primary anchor: establishes diagnostic accuracy gaps across skin tones but does not identify which architectural choices mitigate them.}
+}
+
+@inproceedings{groh2021fitzpatrick17k,
+  title     = {Evaluating Deep Neural Networks Trained on Clinical Images in Dermatology with the {Fitzpatrick} 17k Dataset},
+  author    = {Groh, Matthew and Harris, Caleb and Soenksen, Luis and Lau, Felix and Han, Rachel and Kim, Aerin and Koochek, Arash and Badri, Omar},
+  booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) Workshops},
+  pages     = {1820--1828},
+  year      = {2021},
+  eprint    = {2104.09957},
+  archivePrefix = {arXiv},
+  note      = {Foundational Fitzpatrick-stratified benchmark for dermatology fairness.}
+}
+
+
+% ---------------------------------------------------------------------
+% [B] DATASET
+% ---------------------------------------------------------------------
+
+@article{bhuwalka2025dermaconin,
+  title   = {{DermaCon-IN}: A Multi-concept Annotated Dermatological Image Dataset of Indian Skin Disorders for Clinical {AI} Research},
+  author  = {Bhuwalka, and others},
+  journal = {arXiv preprint arXiv:2506.06099},
+  year    = {2025},
+  eprint  = {2506.06099},
+  archivePrefix = {arXiv},
+  note    = {Primary dataset (514 images, Fitzpatrick + Monk labels, metadata). Harvard Dataverse DOI 10.7910/DVN/W7OUZM. CC BY-NC-SA 4.0.}
+}
+
+
+% ---------------------------------------------------------------------
+% [C] FAIRNESS IN DERMATOLOGY AI
+% ---------------------------------------------------------------------
+
+@inproceedings{wu2023fairprune,
+  title     = {{FairPrune}: Achieving Fairness Through Pruning for Dermatological Disease Diagnosis},
+  author    = {Wu, Yawen and Zeng, Dewen and Xu, Xiaowei and Shi, Yiyu and Hu, Jingtong},
+  booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
+  pages     = {743--753},
+  year      = {2023}
+}
+
+@article{xu2023fairadabn,
+  title   = {{FairAdaBN}: Mitigating unfairness with adaptive batch normalization and its application to dermatological disease classification},
+  author  = {Xu, Zikang and Zhao, Shang and Quan, Quan and Yao, Qingsong and Zhou, S. Kevin},
+  journal = {arXiv preprint arXiv:2303.08325},
+  year    = {2023},
+  eprint  = {2303.08325},
+  archivePrefix = {arXiv}
+}
+
+@inproceedings{chiu2023multiexit,
+  title     = {Toward Fairness Through Fair Multi-Exit Framework for Dermatological Disease Diagnosis},
+  author    = {Chiu, Ching-Hao and Chung, Hao-Wei and Chen, Yu-Jen and Shi, Yiyu and Ho, Tsung-Yi},
+  booktitle = {Medical Image Computing and Computer-Assisted Intervention (MICCAI)},
+  pages     = {97--107},
+  year      = {2023},
+  publisher = {Springer}
+}
+
+@article{chiu2024withoutdemographics,
+  title   = {Achieve fairness without demographics for dermatological disease diagnosis},
+  author  = {Chiu, Ching-Hao and Chen, Yu-Jen and Wu, Yawen and Shi, Yiyu and Ho, Tsung-Yi},
+  journal = {Medical Image Analysis},
+  volume  = {95},
+  pages   = {103188},
+  year    = {2024},
+  doi     = {10.1016/j.media.2024.103188}
+}
+
+@inproceedings{xu2025groupexperts,
+  title     = {Incorporating Rather Than Eliminating: Achieving Fairness for Skin Disease Diagnosis Through Group-Specific Experts},
+  author    = {Xu, Gelei and Duan, Yuying and Liu, Zheyuan and Li, Xueyang and Jiang, Meng and Lemmon, Michael and Jin, Wei and Shi, Yiyu},
+  booktitle = {Medical Image Computing and Computer-Assisted Intervention (MICCAI)},
+  year      = {2025},
+  publisher = {Springer}
+}
+
+@article{xu2022awffl,
+  title   = {Achieving Fairness in Dermatological Disease Diagnosis through Automatic Weight Adjusting Federated Learning and Personalization},
+  author  = {Xu, Gelei and and others},
+  journal = {arXiv preprint arXiv:2208.11187},
+  year    = {2022},
+  eprint  = {2208.11187},
+  archivePrefix = {arXiv}
+}
+
+@inproceedings{huang2024dataalgoarch,
+  title     = {Data-Algorithm-Architecture Co-Optimization for Fair Neural Networks on Skin Lesion Dataset},
+  author    = {and others},
+  booktitle = {Medical Image Computing and Computer-Assisted Intervention (MICCAI)},
+  pages     = {153--163},
+  year      = {2024},
+  publisher = {Springer},
+  eprint    = {2407.13896},
+  archivePrefix = {arXiv},
+  note      = {Closely related: jointly considers architecture and fairness, but not for eczema-psoriasis differential diagnosis or multimodal fusion.}
+}
+
+@article{fairdd2024,
+  title   = {{FairDD}: Enhancing Fairness with Domain-Incremental Learning in Dermatological Disease Diagnosis},
+  author  = {and others},
+  journal = {arXiv preprint arXiv:2412.16542},
+  year    = {2024},
+  eprint  = {2412.16542},
+  archivePrefix = {arXiv}
+}
+
+@article{montoya2024melanomafairness,
+  title   = {Towards Fairness in {AI} for Melanoma Detection: Systematic Review and Recommendations},
+  author  = {Montoya, Laura N. and Roberts, Jennafer Shae and S{\'a}nchez Hidalgo, Bel{\'e}n},
+  journal = {arXiv preprint arXiv:2411.12846},
+  year    = {2024},
+  eprint  = {2411.12846},
+  archivePrefix = {arXiv}
+}
+
+
+% ---------------------------------------------------------------------
+% [D] ECZEMA / PSORIASIS ARCHITECTURE COMPARISON
+% ---------------------------------------------------------------------
+
+@article{comparative2025psoriasis,
+  title   = {Comparative performance of deep learning models and non-dermatologists in diagnosing psoriasis, dermatophytosis, and eczema},
+  author  = {and others},
+  journal = {Scientific Reports},
+  year    = {2025},
+  doi     = {10.1038/s41598-025-29562-6},
+  note    = {Benchmarks CNNs and transformers (incl. Swin, ViT) on eczema/psoriasis/dermatophytosis — but no fairness/Fitzpatrick stratification.}
+}
+
+@article{hybrid2025cnnvit,
+  title   = {A hybrid {CNN--ViT} framework for skin disease classification via feature extraction and selection},
+  author  = {and others},
+  journal = {Neural Computing and Applications},
+  year    = {2025},
+  doi     = {10.1007/s00521-025-11664-x},
+  note    = {Hybrid CNN-ViT for psoriasis/eczema/tinea; no fairness analysis.}
+}
+
+@article{mohan2025transformer,
+  title   = {Enhancing skin disease classification leveraging transformer-based deep learning architectures and explainable {AI}},
+  author  = {Mohan, Jayanth and Sivasubramanian, Arrun and Sowmya, V. and Ravi, Vinayakumar},
+  journal = {Computers in Biology and Medicine},
+  volume  = {190},
+  pages   = {110007},
+  year    = {2025},
+  doi     = {10.1016/j.compbiomed.2025.110007}
+}
+
+@article{dermnet2026cnnvit,
+  title   = {{DermNet}: integrative {CNN-ViT} architecture for bias mitigation in dermatological diagnostics using advanced unsupervised lesion segmentation},
+  author  = {and others},
+  journal = {Scientific Reports},
+  year    = {2026},
+  doi     = {10.1038/s41598-026-35697-x}
+}
+
+
+% ---------------------------------------------------------------------
+% [E] MULTIMODAL FUSION IN DERMATOLOGY
+% ---------------------------------------------------------------------
+
+@article{multimodal2025comparative,
+  title   = {Comparative analysis of multimodal architectures for effective skin lesion detection using clinical and image data},
+  author  = {and others},
+  journal = {Frontiers in Artificial Intelligence},
+  year    = {2025},
+  doi     = {10.3389/frai.2025.1608837},
+  note    = {Compares early/late fusion strategies for image+metadata; no Fitzpatrick fairness evaluation.}
+}
+
+@article{mdfnet2022,
+  title   = {A deep learning based multimodal fusion model for skin lesion diagnosis using smartphone collected clinical images and metadata},
+  author  = {and others},
+  journal = {Frontiers in Surgery},
+  year    = {2022},
+  doi     = {10.3389/fsurg.2022.1029991}
+}
+
+@article{multifair2025,
+  title   = {{MultiFair}: Multimodal Balanced Fairness-Aware Medical Classification with Dual-Level Gradient Modulation},
+  author  = {and others},
+  journal = {arXiv preprint arXiv:2510.07328},
+  year    = {2025},
+  eprint  = {2510.07328},
+  archivePrefix = {arXiv},
+  note    = {Multimodal fairness in medical classification (general) — motivates multimodal fairness but not dermatology-specific gate fusion.}
+}
+
+@article{medfusionnet2025,
+  title   = {Automated skin cancer detection using {MedFusionNet} with attention-based fusion of {ConvNeXt} and vision transformer},
+  author  = {and others},
+  journal = {Scientific Reports},
+  year    = {2025},
+  doi     = {10.1038/s41598-025-31816-2},
+  note    = {Discusses gating mechanisms for weighted feature control in fusion — relevant precedent for the gate network.}
+}
+
+
+% ---------------------------------------------------------------------
+% [F] FAIRNESS METHODS & METRICS (GENERAL)
+% ---------------------------------------------------------------------
+
+@inproceedings{buolamwini2018gendershades,
+  title     = {Gender Shades: Intersectional Accuracy Disparities in Commercial Gender Classification},
+  author    = {Buolamwini, Joy and Gebru, Timnit},
+  booktitle = {Proceedings of the 1st Conference on Fairness, Accountability and Transparency (FAccT)},
+  pages     = {77--91},
+  year      = {2018}
+}
+
+@inproceedings{hardt2016equality,
+  title     = {Equality of Opportunity in Supervised Learning},
+  author    = {Hardt, Moritz and Price, Eric and Srebro, Nati},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  volume    = {29},
+  year      = {2016}
+}
+
+
+% ---------------------------------------------------------------------
+% [G] EXPLAINABILITY
+% ---------------------------------------------------------------------
+
+@inproceedings{selvaraju2017gradcam,
+  title     = {{Grad-CAM}: Visual Explanations from Deep Networks via Gradient-Based Localization},
+  author    = {Selvaraju, Ramprasaath R. and Cogswell, Michael and Das, Abhishek and Vedantam, Ramakrishna and Parikh, Devi and Batra, Dhruv},
+  booktitle = {Proceedings of the IEEE International Conference on Computer Vision (ICCV)},
+  pages     = {618--626},
+  year      = {2017}
+}
+
+
+% ---------------------------------------------------------------------
+% BACKBONE ARCHITECTURE REFERENCES (cite the ones you use)
+% ---------------------------------------------------------------------
+
+@inproceedings{he2016resnet,
+  title     = {Deep Residual Learning for Image Recognition},
+  author    = {He, Kaiming and Zhang, Xiangyu and Ren, Shaoqing and Sun, Jian},
+  booktitle = {Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)},
+  pages     = {770--778},
+  year      = {2016}
+}
+
+@inproceedings{dosovitskiy2021vit,
+  title     = {An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale},
+  author    = {Dosovitskiy, Alexey and Beyer, Lucas and Kolesnikov, Alexander and Weissenborn, Dirk and Zhai, Xiaohua and Unterthiner, Thomas and Dehghani, Mostafa and Minderer, Matthias and Heigold, Georg and Gelly, Sylvain and Uszkoreit, Jakob and Houlsby, Neil},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year      = {2021}
+}
