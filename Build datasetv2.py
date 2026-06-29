@@ -1,15 +1,17 @@
 """
 build_dataset_v2.py
 --------------------
-Filters eczema and psoriasis images from the Fitzpatrick17k dataset
-and organizes them into dataset_v2 with a stratified train/test split.
+Filters eczema and psoriasis images from the skin metadata dataset
+and organizes them into dataset_v2 with a stratified train/test split
+and class balancing (oversampling minority class in train set only).
 
 Expected inputs:
-  --csv       Path to Fitzpatrick17k metadata CSV (e.g. fitzpatrick17k.csv)
-  --img_dir   Directory containing all downloaded Fitzpatrick17k images
+  --csv       Path to metadata .tab or .csv file (e.g. Skin_Metadata.tab)
+  --img_dir   Directory containing all downloaded images (DATASET_0 + DATASET_1 merged)
   --out_dir   Output root directory (default: ./dataset_v2)
   --test_size Fraction of data for test set (default: 0.2)
   --seed      Random seed for reproducibility (default: 42)
+  --balance   Balance strategy: 'oversample', 'undersample', or 'none' (default: oversample)
 
 Output structure:
   dataset_v2/
@@ -21,11 +23,10 @@ Output structure:
       psoriasis/
 """
 
-import os
-import re
 import shutil
 import hashlib
 import argparse
+import random
 import pandas as pd
 from pathlib import Path
 from sklearn.model_selection import train_test_split
@@ -36,17 +37,21 @@ from sklearn.model_selection import train_test_split
 TARGET_CONDITIONS = {
     "eczema": [
         "eczema", "atopic dermatitis", "contact dermatitis",
-        "dyshidrotic eczema", "nummular eczema", "seborrheic dermatitis"
+        "allergic contact dermatitis", "infected eczema",
+        "ear eczema", "disseminated eczema", "dry discoid eczema",
+        "crusted eczematous dermatitis", "chronic eczema",
+        "seborrheic dermatitis", "eczemated tinea"
     ],
     "psoriasis": [
-        "psoriasis", "plaque psoriasis", "guttate psoriasis",
-        "pustular psoriasis", "psoriasis vulgaris"
+        "psoriasis", "chronic plaque psoriasis", "guttate psoriasis",
+        "pustular psoriasis", "psoriasis vulgaris", "palmar psoriasis",
+        "inverse psoriasis"
     ],
 }
 
 def normalize_label(label: str) -> str | None:
-    """Map a raw Fitzpatrick17k label to 'eczema', 'psoriasis', or None."""
-    label = label.strip().lower()
+    """Map a raw label to 'eczema', 'psoriasis', or None."""
+    label = str(label).strip().lower().strip('"')
     for canonical, variants in TARGET_CONDITIONS.items():
         if any(v in label for v in variants):
             return canonical
@@ -64,7 +69,6 @@ def file_hash(path: Path) -> str:
 
 
 def dedup_paths(paths: list[Path]) -> list[Path]:
-    """Return a deduplicated list of image paths based on MD5 content hash."""
     seen = {}
     unique = []
     for p in paths:
@@ -78,58 +82,98 @@ def dedup_paths(paths: list[Path]) -> list[Path]:
     return unique
 
 
+# ── Class balancing (train set only) ──────────────────────────────────────────
+
+def balance_classes(train_splits: dict, strategy: str, seed: int) -> dict:
+    """Oversample minority or undersample majority in the train set."""
+    counts = {label: len(df) for label, df in train_splits.items()}
+    print(f"\n  Class counts before balancing: {counts}")
+
+    if strategy == "none":
+        return train_splits
+
+    if strategy == "oversample":
+        max_count = max(counts.values())
+        balanced = {}
+        for label, df in train_splits.items():
+            if len(df) < max_count:
+                n_extra = max_count - len(df)
+                extra = df.sample(n=n_extra, replace=True, random_state=seed)
+                balanced[label] = pd.concat([df, extra], ignore_index=True)
+                print(f"  Oversampled {label}: {len(df)} → {len(balanced[label])}")
+            else:
+                balanced[label] = df
+        return balanced
+
+    if strategy == "undersample":
+        min_count = min(counts.values())
+        balanced = {}
+        for label, df in train_splits.items():
+            if len(df) > min_count:
+                balanced[label] = df.sample(n=min_count, random_state=seed)
+                print(f"  Undersampled {label}: {len(df)} → {len(balanced[label])}")
+            else:
+                balanced[label] = df
+        return balanced
+
+    raise ValueError(f"Unknown balance strategy: {strategy}")
+
+
 # ── Core pipeline ──────────────────────────────────────────────────────────────
 
 def build_dataset(csv_path: str, img_dir: str, out_dir: str,
-                  test_size: float, seed: int) -> None:
+                  test_size: float, seed: int, balance: str) -> None:
 
     csv_path = Path(csv_path)
     img_dir  = Path(img_dir)
     out_dir  = Path(out_dir)
 
-    # 1. Load metadata
-    print(f"\n[1/5] Loading metadata from {csv_path} ...")
-    df = pd.read_csv(csv_path)
+    # 1. Load metadata (supports .tab and .csv)
+    print(f"\n[1/6] Loading metadata from {csv_path} ...")
+    sep = "\t" if csv_path.suffix.lower() == ".tab" else ","
+    df = pd.read_csv(csv_path, sep=sep)
+    # Strip quotes from column names
+    df.columns = [c.strip().strip('"') for c in df.columns]
     print(f"  Total rows: {len(df)}")
+    print(f"  Columns: {list(df.columns)}")
 
-    # Detect label column (common names in Fitzpatrick17k)
-    label_col = next(
-        (c for c in df.columns if c.lower() in ("label", "condition", "three_partition_label")),
-        None
-    )
-    if label_col is None:
-        raise ValueError(f"Could not find a label column. Columns found: {list(df.columns)}")
-    print(f"  Using label column: '{label_col}'")
+    # Use known column names for this dataset
+    label_col = "Disease_label"
+    img_col   = "Image_name"
 
-    # Detect image filename column
-    img_col = next(
-        (c for c in df.columns if c.lower() in ("image_id", "md5hash", "filename", "file")),
-        None
-    )
-    if img_col is None:
-        raise ValueError(f"Could not find an image ID column. Columns found: {list(df.columns)}")
-    print(f"  Using image column: '{img_col}'")
+    if label_col not in df.columns:
+        raise ValueError(f"Expected column '{label_col}' not found. Columns: {list(df.columns)}")
+    if img_col not in df.columns:
+        raise ValueError(f"Expected column '{img_col}' not found. Columns: {list(df.columns)}")
 
     # 2. Filter target conditions
-    print(f"\n[2/5] Filtering eczema and psoriasis rows ...")
+    print(f"\n[2/6] Filtering eczema and psoriasis rows ...")
     df["_canonical"] = df[label_col].astype(str).apply(normalize_label)
     df_filtered = df[df["_canonical"].notna()].copy()
     print(f"  Eczema rows   : {(df_filtered['_canonical'] == 'eczema').sum()}")
     print(f"  Psoriasis rows: {(df_filtered['_canonical'] == 'psoriasis').sum()}")
     print(f"  Total filtered: {len(df_filtered)}")
 
-    # 3. Resolve image paths and drop missing files
-    print(f"\n[3/5] Resolving image paths in {img_dir} ...")
+    # 3. Resolve image paths (search across img_dir and subdirectories)
+    print(f"\n[3/6] Resolving image paths in {img_dir} ...")
 
-    def find_image(img_id: str) -> Path | None:
-        # Try common extensions
-        for ext in ("", ".jpg", ".jpeg", ".png", ".bmp"):
-            p = img_dir / f"{img_id}{ext}"
-            if p.exists():
-                return p
-        # Fuzzy: search for filename containing img_id
-        matches = list(img_dir.glob(f"*{img_id}*"))
-        return matches[0] if matches else None
+    # Build a lookup of all image filenames in img_dir for fast searching
+    all_images = {}
+    for p in img_dir.rglob("*"):
+        if p.suffix.lower() in (".jpg", ".jpeg", ".png", ".bmp"):
+            all_images[p.name.lower()] = p
+
+    def find_image(img_name: str) -> Path | None:
+        img_name = img_name.strip().strip('"')
+        # Direct match
+        if img_name.lower() in all_images:
+            return all_images[img_name.lower()]
+        # Try adding extensions
+        for ext in (".jpg", ".jpeg", ".png"):
+            key = (img_name + ext).lower()
+            if key in all_images:
+                return all_images[key]
+        return None
 
     df_filtered["_path"] = df_filtered[img_col].astype(str).apply(find_image)
     missing = df_filtered["_path"].isna().sum()
@@ -139,7 +183,7 @@ def build_dataset(csv_path: str, img_dir: str, out_dir: str,
     print(f"  Images resolved: {len(df_filtered)}")
 
     # 4. Content-hash deduplication per class
-    print(f"\n[4/5] Deduplicating by content hash ...")
+    print(f"\n[4/6] Deduplicating by content hash ...")
     deduped_rows = []
     for label in ("eczema", "psoriasis"):
         subset = df_filtered[df_filtered["_canonical"] == label].copy()
@@ -152,51 +196,74 @@ def build_dataset(csv_path: str, img_dir: str, out_dir: str,
     df_final = pd.concat(deduped_rows, ignore_index=True)
     print(f"  Total after dedup: {len(df_final)}")
 
-    # 5. Stratified train/test split and copy files
-    print(f"\n[5/5] Splitting ({int((1-test_size)*100)}/{int(test_size*100)}) and copying files ...")
-
-    splits = {"train": [], "test": []}
+    # 5. Stratified train/test split
+    print(f"\n[5/6] Splitting ({int((1-test_size)*100)}/{int(test_size*100)}) ...")
+    train_splits = {}
+    test_splits  = {}
     for label in ("eczema", "psoriasis"):
         subset = df_final[df_final["_canonical"] == label]
         train_df, test_df = train_test_split(
             subset, test_size=test_size, random_state=seed
         )
-        splits["train"].append(train_df)
-        splits["test"].append(test_df)
+        train_splits[label] = train_df
+        test_splits[label]  = test_df
         print(f"  {label.capitalize()}: {len(train_df)} train / {len(test_df)} test")
 
-    for split_name, dfs in splits.items():
-        for df_part in dfs:
+    # Balance train set only
+    train_splits = balance_classes(train_splits, balance, seed)
+
+    # 6. Copy files into dataset_v2
+    print(f"\n[6/6] Copying files to {out_dir} ...")
+
+    def copy_split(splits: dict, split_name: str):
+        for label, df_part in splits.items():
+            dst_dir = out_dir / split_name / label
+            dst_dir.mkdir(parents=True, exist_ok=True)
+            seen_names = {}
             for _, row in df_part.iterrows():
-                label   = row["_canonical"]
-                src     = Path(row["_path"])
-                dst_dir = out_dir / split_name / label
-                dst_dir.mkdir(parents=True, exist_ok=True)
-                dst     = dst_dir / src.name
-                # Avoid overwriting with a suffix if name collision
-                if dst.exists():
+                src  = Path(row["_path"])
+                name = src.name
+                # Handle duplicates from oversampling (same file copied twice)
+                if name in seen_names:
+                    seen_names[name] += 1
                     stem, suffix = src.stem, src.suffix
-                    dst = dst_dir / f"{stem}_{file_hash(src)[:8]}{suffix}"
-                shutil.copy2(src, dst)
+                    name = f"{stem}_{seen_names[src.name]}{suffix}"
+                else:
+                    seen_names[src.name] = 0
+                shutil.copy2(src, dst_dir / name)
+
+    copy_split(train_splits, "train")
+    copy_split(test_splits,  "test")
 
     # Summary
     print(f"\n✅ Done! Dataset written to: {out_dir.resolve()}")
+    print(f"{'Split':<10} {'Eczema':>10} {'Psoriasis':>12} {'Total':>8}")
+    print("-" * 42)
+    grand = 0
     for split_name in ("train", "test"):
+        row_counts = []
         for label in ("eczema", "psoriasis"):
             d = out_dir / split_name / label
-            count = len(list(d.glob("*"))) if d.exists() else 0
-            print(f"  {split_name}/{label}: {count} images")
+            row_counts.append(len(list(d.glob("*"))) if d.exists() else 0)
+        total = sum(row_counts)
+        grand += total
+        print(f"{split_name:<10} {row_counts[0]:>10} {row_counts[1]:>12} {total:>8}")
+    print("-" * 42)
+    print(f"{'TOTAL':<10} {grand:>31}")
 
 
 # ── CLI ────────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Build dataset_v2 from Fitzpatrick17k")
-    parser.add_argument("--csv",       required=True,  help="Path to Fitzpatrick17k CSV")
+    parser = argparse.ArgumentParser(description="Build dataset_v2 from skin metadata")
+    parser.add_argument("--csv",       required=True,  help="Path to metadata .tab or .csv file")
     parser.add_argument("--img_dir",   required=True,  help="Directory of downloaded images")
-    parser.add_argument("--out_dir",   default="dataset_v2", help="Output directory")
-    parser.add_argument("--test_size", type=float, default=0.2, help="Test fraction (default 0.2)")
-    parser.add_argument("--seed",      type=int,   default=42,  help="Random seed (default 42)")
+    parser.add_argument("--out_dir",   default="dataset_v2", help="Output directory (default: dataset_v2)")
+    parser.add_argument("--test_size", type=float, default=0.2,          help="Test fraction (default: 0.2)")
+    parser.add_argument("--seed",      type=int,   default=42,           help="Random seed (default: 42)")
+    parser.add_argument("--balance",   default="oversample",
+                        choices=["oversample", "undersample", "none"],
+                        help="Class balancing strategy for train set (default: oversample)")
     args = parser.parse_args()
 
     build_dataset(
@@ -205,4 +272,5 @@ if __name__ == "__main__":
         out_dir   = args.out_dir,
         test_size = args.test_size,
         seed      = args.seed,
+        balance   = args.balance,
     )
