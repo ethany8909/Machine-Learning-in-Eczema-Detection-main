@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "If you use DermaFair, please cite it as below."
+title: "DermaFair: Fitzpatrick-stratified fairness evaluation for multimodal dermatology AI"
+version: 0.1.0
+date-released: 2026-06-28
+license: MIT
+authors:
+  - family-names: "Ethan"
+    given-names: ""
+keywords:
+  - fairness
+  - dermatology
+  - deep-learning
+  - multimodal
+  - skin-tone
+# Replace with your Zenodo DOI after archiving a release:
+# doi: 10.5281/zenodo.XXXXXXX
+references:
+  - type: article
+    title: "DermaCon-IN: A Multi-concept Annotated Dermatological Image Dataset of Indian Skin Disorders for Clinical AI Research"
+    authors:
+      - family-names: Bhuwalka
+        given-names: ""
+    year: 2025
+    notes: "Primary dataset (arXiv:2506.06099; Harvard Dataverse DOI 10.7910/DVN/W7OUZM)"
