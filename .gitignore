@@ -1,0 +1,27 @@
+﻿# Datasets - do not commit images
+dataset_v2/
+dataset_backup*/
+DATASET_0/
+DATASET_1/
+
+# Metadata tab file (large)
+Skin_Metadata.tab
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+venv/
+
+# Model checkpoints
+*.pt
+*.pth
+*.ckpt
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
