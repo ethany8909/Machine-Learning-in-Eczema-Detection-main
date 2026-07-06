@@ -42,7 +42,8 @@ class GateNetwork(nn.Module):
 
     def __init__(self, image_model: nn.Module, metadata_model: nn.Module,
                  num_classes: int = 2, hidden_dim: int = 128,
-                 freeze_image_backbone: bool = False):
+                 freeze_image_backbone: bool = False,
+                 normalize_features: bool = True):
         super().__init__()
         self.image_model = image_model
         self.metadata_model = metadata_model
@@ -53,6 +54,14 @@ class GateNetwork(nn.Module):
 
         img_dim = image_model.feature_dim
         meta_dim = metadata_model.feature_dim
+
+        # Normalize each branch's features before the gate sees them, so the gate
+        # is not biased by raw feature-scale mismatch between a deep image backbone
+        # and a shallow metadata MLP (a key cause of modality collapse).
+        self.normalize_features = normalize_features
+        self.img_norm = nn.LayerNorm(img_dim) if normalize_features else nn.Identity()
+        self.meta_norm = nn.LayerNorm(meta_dim) if normalize_features else nn.Identity()
+
         self.gate = nn.Sequential(
             nn.Linear(img_dim + meta_dim, hidden_dim),
             nn.ReLU(inplace=True),
@@ -62,21 +71,48 @@ class GateNetwork(nn.Module):
         self.image_head = nn.Linear(img_dim, num_classes)
         self.meta_head = nn.Linear(meta_dim, num_classes)
 
-        self.last_gate_weights: torch.Tensor | None = None
+        self.last_gate_weights: torch.Tensor | None = None   # detached, for logging
+        self._weights_for_reg: torch.Tensor | None = None     # keeps graph, for entropy loss
 
     def forward(self, image: torch.Tensor, meta: torch.Tensor) -> torch.Tensor:
         fi = self.image_model.features(image)     # [B, img_dim]
         fm = self.metadata_model.features(meta)   # [B, meta_dim]
 
-        gate_logits = self.gate(torch.cat([fi, fm], dim=1))   # [B, 2]
+        gate_in = torch.cat([self.img_norm(fi), self.meta_norm(fm)], dim=1)
+        gate_logits = self.gate(gate_in)                      # [B, 2]
         weights = F.softmax(gate_logits, dim=1)               # [B, 2]
         self.last_gate_weights = weights.detach()
+        self._weights_for_reg = weights
 
         li = self.image_head(fi)
         lm = self.meta_head(fm)
         w_img = weights[:, 0:1]
         w_meta = weights[:, 1:2]
         return w_img * li + w_meta * lm
+
+    def entropy_penalty(self) -> torch.Tensor:
+        """Return -mean(entropy) of the per-sample gate distribution.
+
+        Adding ``lambda * entropy_penalty()`` to the loss *rewards* high entropy
+        (using both modalities), preventing the gate from collapsing onto one
+        branch early in training. Minimized (=most negative) at the uniform 0.5/0.5.
+        """
+        w = self._weights_for_reg
+        if w is None:
+            return torch.tensor(0.0)
+        entropy = -(w * w.clamp_min(1e-8).log()).sum(dim=1).mean()
+        return -entropy
+
+    def warm_start_heads(self):
+        """Initialize the per-branch classifier heads from each branch's already
+        trained classifier, so both modalities produce meaningful logits from
+        epoch 1 (the gate can compare real signals instead of noise)."""
+        img_clf = getattr(self.image_model, "classifier", None)
+        if isinstance(img_clf, nn.Linear) and img_clf.weight.shape == self.image_head.weight.shape:
+            self.image_head.load_state_dict(img_clf.state_dict())
+        meta_clf = getattr(self.metadata_model, "classifier", None)
+        if isinstance(meta_clf, nn.Linear) and meta_clf.weight.shape == self.meta_head.weight.shape:
+            self.meta_head.load_state_dict(meta_clf.state_dict())
 
     @torch.no_grad()
     def gate_weights(self, image: torch.Tensor, meta: torch.Tensor) -> torch.Tensor:

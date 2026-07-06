@@ -26,6 +26,7 @@ class TrainConfig:
     patience: int = 10
     device: str = "cpu"
     modality: str = "image"  # image | metadata | multimodal
+    loss: str = "ce"  # ce | focal — focal loss for imbalanced data
 
 
 def _unpack(batch, modality, device):
@@ -53,22 +54,59 @@ def class_weights(labels: np.ndarray, num_classes: int = 2) -> torch.Tensor:
     return torch.tensor(w, dtype=torch.float32)
 
 
+class FocalLoss(nn.Module):
+    """Focal loss for imbalanced classification (Lin et al. 2017).
+
+    Downweights easy (correct) examples, focuses on hard (misclassified) ones.
+    Better than weighted CE for class imbalance, especially when minority class
+    is severely underrepresented.
+
+    Loss = -alpha_t * (1 - p_t)^gamma * log(p_t)
+    where p_t is model confidence in the correct class.
+    """
+    def __init__(self, alpha: torch.Tensor | None = None, gamma: float = 2.0):
+        super().__init__()
+        self.alpha = alpha  # per-class weights (e.g., from class_weights)
+        self.gamma = gamma
+
+    def forward(self, logits: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
+        ce = nn.functional.cross_entropy(logits, targets, weight=self.alpha, reduction="none")
+        p = torch.exp(-ce)  # p_t: model confidence
+        focal = (1 - p) ** self.gamma * ce
+        return focal.mean()
+
+
 def train_model(
     model: nn.Module,
     train_loader: DataLoader,
     val_loader: DataLoader,
     cfg: TrainConfig,
     loss_weights: torch.Tensor | None = None,
+    epoch_callback=None,
+    aux_loss_fn=None,
 ) -> dict:
     """Train with early stopping on validation balanced accuracy.
 
     Returns a history dict and leaves ``model`` holding the best-val weights.
+    ``epoch_callback(epoch, model)`` (if given) runs after each epoch — used to
+    log gate weights per epoch for the gate network.
+    ``aux_loss_fn(model)`` (if given) returns an extra loss term added to the
+    per-batch loss — used for the gate-network entropy regularizer.
     """
     device = cfg.device
     model.to(device)
-    criterion = nn.CrossEntropyLoss(
-        weight=loss_weights.to(device) if loss_weights is not None else None
-    )
+
+    if cfg.loss == "focal":
+        criterion = FocalLoss(
+            alpha=loss_weights.to(device) if loss_weights is not None else None,
+            gamma=2.0
+        )
+        log.info("using focal loss (gamma=2.0) for imbalanced data")
+    else:
+        criterion = nn.CrossEntropyLoss(
+            weight=loss_weights.to(device) if loss_weights is not None else None
+        )
+
     params = [p for p in model.parameters() if p.requires_grad]
     optimizer = torch.optim.Adam(params, lr=cfg.lr, weight_decay=cfg.weight_decay)
 
@@ -83,6 +121,8 @@ def train_model(
             optimizer.zero_grad()
             logits = model(*inputs)
             loss = criterion(logits, y)
+            if aux_loss_fn is not None:
+                loss = loss + aux_loss_fn(model)
             loss.backward()
             optimizer.step()
             running += loss.item() * y.size(0)
@@ -94,6 +134,9 @@ def train_model(
         history["val_bacc"].append(val_bacc)
         log.info(f"epoch {epoch+1:02d} | train {train_loss:.4f} | "
                  f"val {val_loss:.4f} | val_bacc {val_bacc:.4f}")
+
+        if epoch_callback is not None:
+            epoch_callback(epoch, model)
 
         if val_bacc > best_bacc:
             best_bacc = val_bacc
@@ -137,12 +180,13 @@ def predict(model, loader, cfg) -> dict:
     """Run inference; return dict of arrays incl. gate weights if available."""
     device = cfg.device
     model.to(device).eval()
-    ys, ps, fitz, gate_w = [], [], [], []
+    ys, ps, probs, fitz, gate_w = [], [], [], [], []
     for batch in loader:
         inputs, y = _unpack(batch, cfg.modality, device)
         logits = model(*inputs)
         ys.append(y.cpu().numpy())
         ps.append(logits.argmax(1).cpu().numpy())
+        probs.append(torch.softmax(logits, dim=1).cpu().numpy())
         if "fitzpatrick" in batch:
             fitz.append(np.asarray(batch["fitzpatrick"]))
         gw = getattr(model, "last_gate_weights", None)
@@ -152,6 +196,7 @@ def predict(model, loader, cfg) -> dict:
     out = {
         "y_true": np.concatenate(ys),
         "y_pred": np.concatenate(ps),
+        "y_prob": np.concatenate(probs),  # [N, num_classes] softmax probabilities
     }
     if fitz:
         out["fitzpatrick"] = np.concatenate(fitz)

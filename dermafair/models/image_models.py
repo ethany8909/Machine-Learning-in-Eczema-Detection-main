@@ -11,7 +11,7 @@ from __future__ import annotations
 import torch
 import torch.nn as nn
 import torchvision.models as tvm
-from dermafair.models.custom_resnet50 import CustomResNet50
+from dermafair.models.custom_resnet50_pytorch import CustomResNet50
 
 class _Backbone(nn.Module):
     feature_dim: int
