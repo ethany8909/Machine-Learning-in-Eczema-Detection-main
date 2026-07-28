@@ -89,9 +89,9 @@ def _mean_gate_weights(model, loader, device):
 def run_metadata(args, device, out_dir, evaluator):
     tr, va, te, meta_dim = build_multimodal_dataloaders(
         args.split_root, args.metadata_csv, batch_size=args.batch_size,
-        num_workers=args.num_workers, load_images=False,
+        num_workers=args.num_workers, load_images=False, regime=args.regime,
     )
-    log.info(f"metadata feature dim: {meta_dim}")
+    log.info(f"regime={args.regime or 'full'} | metadata feature dim: {meta_dim}")
     cw = class_weights(_train_labels(tr))
     results = {}
     for kind in (["mlp"] if args.smoke else ["logistic", "mlp"]):
@@ -118,8 +118,9 @@ def run_fusion(args, device, out_dir, evaluator):
 
     tr, va, te, meta_dim = build_multimodal_dataloaders(
         args.split_root, args.metadata_csv, batch_size=args.batch_size,
-        num_workers=args.num_workers, load_images=True,
+        num_workers=args.num_workers, load_images=True, regime=args.regime,
     )
+    log.info(f"regime={args.regime or 'full'} | metadata feature dim: {meta_dim}")
     cw = class_weights(_train_labels(tr))
     results = {}
     strategies = ["gate_network"] if args.smoke else ["late_fusion", "gate_network"]
@@ -208,6 +209,8 @@ def main():
                     help="trained metadata-only MLP to warm-start the fusion metadata branch")
     ap.add_argument("--gate-entropy", type=float, default=0.1,
                     help="weight of the gate entropy penalty (0 disables; prevents modality collapse)")
+    ap.add_argument("--regime", choices=["autonomous", "triage", "expert"], default=None,
+                    help="deployment-scenario metadata feature set (None = full field set)")
     ap.add_argument("--epochs", type=int, default=20)
     ap.add_argument("--patience", type=int, default=5)
     ap.add_argument("--lr", type=float, default=1e-3)
