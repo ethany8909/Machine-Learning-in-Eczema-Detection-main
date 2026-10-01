@@ -1,0 +1,79 @@
+<svg viewBox="0 0 1000 780" xmlns="http://www.w3.org/2000/svg" role="img" font-family="-apple-system, Segoe UI, Roboto, sans-serif">
+<title>DermaFair eczema-psoriasis multimodal fairness pipeline (deployment-scenario spectrum)</title>
+<desc>An image branch (5 architectures) and a metadata branch (evaluated across a 3-rung deployment spectrum: autonomous, triage, expert) are combined by fixed late fusion or a learned gate network, producing an eczema-vs-psoriasis prediction evaluated for fairness across Fitzpatrick skin-tone bands.</desc>
+<style>
+ .lbl{font-size:14px;font-weight:600;fill:#1a1a1a;}
+ .sub{font-size:11px;fill:#444;}
+ .tag{font-size:12px;font-weight:700;}
+ .flow{stroke:#8b93a0;stroke-width:2;fill:none;marker-end:url(#arr);}
+</style>
+<defs>
+ <marker id="arr" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#8b93a0"/></marker>
+</defs>
+<text x="500" y="28" text-anchor="middle" font-size="19" font-weight="700" fill="#111">Fairness-Aware Multimodal Eczema-Psoriasis Diagnosis</text>
+<text x="500" y="47" text-anchor="middle" font-size="12" fill="#666">Same 1125 images / subject-level split; the metadata branch is evaluated across a deployment spectrum</text>
+
+<!-- INPUTS -->
+<rect x="60" y="62" width="360" height="52" rx="10" fill="#EAF0F8" stroke="#4C72B0"/>
+<text x="240" y="84" text-anchor="middle" class="lbl">Dermatology image</text>
+<text x="240" y="102" text-anchor="middle" class="sub">224x224 | ImageNet norm | regime-independent</text>
+<rect x="580" y="62" width="360" height="52" rx="10" fill="#FBEEE4" stroke="#DD8452"/>
+<text x="760" y="84" text-anchor="middle" class="lbl">Clinical metadata</text>
+<text x="760" y="102" text-anchor="middle" class="sub">feature set grows across the deployment spectrum</text>
+
+<!-- IMAGE BRANCH -->
+<rect x="60" y="150" width="360" height="150" rx="10" fill="#F5F8FC" stroke="#4C72B0"/>
+<text x="240" y="172" text-anchor="middle" class="tag" fill="#4C72B0">IMAGE BRANCH - 5 architectures (CV'd)</text>
+<rect x="78" y="185" width="150" height="24" rx="6" fill="#fff" stroke="#4C72B0"/><text x="153" y="202" text-anchor="middle" class="sub">CNN from scratch</text>
+<rect x="252" y="185" width="150" height="24" rx="6" fill="#fff" stroke="#4C72B0"/><text x="327" y="202" text-anchor="middle" class="sub">ResNet-50 *</text>
+<rect x="78" y="215" width="150" height="24" rx="6" fill="#fff" stroke="#4C72B0"/><text x="153" y="232" text-anchor="middle" class="sub">Custom ResNet-50</text>
+<rect x="252" y="215" width="150" height="24" rx="6" fill="#fff" stroke="#4C72B0"/><text x="327" y="232" text-anchor="middle" class="sub">ViT-B/16</text>
+<rect x="165" y="245" width="150" height="24" rx="6" fill="#fff" stroke="#4C72B0"/><text x="240" y="262" text-anchor="middle" class="sub">Hybrid CNN-Transformer</text>
+<text x="240" y="288" text-anchor="middle" class="sub" font-weight="700">* ResNet-50 = fusion backbone (CV AUROC 0.78)</text>
+
+<!-- METADATA BRANCH: the spectrum -->
+<rect x="580" y="150" width="360" height="150" rx="10" fill="#FEF7F1" stroke="#DD8452"/>
+<text x="760" y="172" text-anchor="middle" class="tag" fill="#DD8452">METADATA BRANCH - deployment spectrum</text>
+<rect x="598" y="184" width="324" height="26" rx="6" fill="#fff" stroke="#DD8452"/><text x="760" y="201" text-anchor="middle" class="sub">Autonomous: age, sex  (AUROC ~0.59)</text>
+<rect x="598" y="214" width="324" height="26" rx="6" fill="#DCEBE0" stroke="#55A868" stroke-width="2"/><text x="760" y="231" text-anchor="middle" class="sub" font-weight="700">Triage: + body site  (~0.78, PRIMARY)</text>
+<rect x="598" y="244" width="324" height="26" rx="6" fill="#fff" stroke="#DD8452" stroke-dasharray="4"/><text x="760" y="261" text-anchor="middle" class="sub">Expert: + descriptors  (~0.91, LEAKY)</text>
+<text x="760" y="288" text-anchor="middle" class="sub" font-weight="700">shallow MLP encoder -> metadata features</text>
+
+<path class="flow" d="M240,114 L240,150"/>
+<path class="flow" d="M760,114 L760,150"/>
+
+<!-- features -->
+<rect x="120" y="326" width="240" height="34" rx="8" fill="#EAF0F8" stroke="#4C72B0"/><text x="240" y="348" text-anchor="middle" class="sub" font-weight="700">image features (frozen in fusion)</text>
+<rect x="640" y="326" width="240" height="34" rx="8" fill="#FBEEE4" stroke="#DD8452"/><text x="760" y="348" text-anchor="middle" class="sub" font-weight="700">metadata features</text>
+<path class="flow" d="M240,300 L240,326"/>
+<path class="flow" d="M760,300 L760,326"/>
+
+<!-- FUSION -->
+<rect x="300" y="404" width="400" height="120" rx="12" fill="#EFF6F0" stroke="#55A868" stroke-width="2"/>
+<text x="500" y="425" text-anchor="middle" class="tag" fill="#55A868">FUSION (per regime)</text>
+<rect x="322" y="436" width="166" height="70" rx="8" fill="#fff" stroke="#55A868"/>
+<text x="405" y="458" text-anchor="middle" class="sub" font-weight="700">Late fusion</text>
+<text x="405" y="475" text-anchor="middle" class="sub">fixed 0.5 / 0.5</text>
+<text x="405" y="493" text-anchor="middle" class="sub" fill="#888">control</text>
+<rect x="512" y="436" width="166" height="70" rx="8" fill="#DCEBE0" stroke="#55A868" stroke-width="2"/>
+<text x="595" y="458" text-anchor="middle" class="sub" font-weight="700">Gate network</text>
+<text x="595" y="475" text-anchor="middle" class="tag" fill="#55A868">learned alpha . beta</text>
+<text x="595" y="493" text-anchor="middle" class="sub" fill="#888">CV: fairer, competitive</text>
+<path class="flow" d="M240,360 L240,470 L320,470"/><text x="258" y="453" class="tag" fill="#4C72B0">x a</text>
+<path class="flow" d="M760,360 L760,470 L680,470"/><text x="700" y="453" class="tag" fill="#DD8452">x b</text>
+
+<!-- OUTPUT -->
+<circle cx="465" cy="582" r="8" fill="#55A868"/><circle cx="500" cy="582" r="8" fill="#55A868"/><circle cx="535" cy="582" r="8" fill="#55A868"/>
+<text x="500" y="558" text-anchor="middle" class="sub">softmax</text>
+<rect x="370" y="602" width="120" height="32" rx="8" fill="#EAF0F8" stroke="#4C72B0"/><text x="430" y="623" text-anchor="middle" class="sub" font-weight="700">Eczema</text>
+<rect x="510" y="602" width="120" height="32" rx="8" fill="#FBEEE4" stroke="#DD8452"/><text x="570" y="623" text-anchor="middle" class="sub" font-weight="700">Psoriasis</text>
+<path class="flow" d="M500,524 L500,570"/>
+<path class="flow" d="M500,606 L430,602"/>
+<path class="flow" d="M500,606 L570,602"/>
+
+<!-- FAIRNESS -->
+<rect x="80" y="666" width="840" height="58" rx="10" fill="#F3F1F7" stroke="#5B6470"/>
+<text x="500" y="688" text-anchor="middle" class="tag" fill="#5B6470">FAIRNESS EVALUATION - stratified by Fitzpatrick FST 3-6</text>
+<text x="500" y="708" text-anchor="middle" class="sub">per-tone metrics | estimation + bootstrap CIs (not significance) | paired-bootstrap relative claims | fairness-vs-regime trend</text>
+<path class="flow" d="M500,634 L500,666"/>
+</svg>

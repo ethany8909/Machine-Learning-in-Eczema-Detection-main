@@ -1,0 +1,84 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dermafair"
+version = "0.2.0"
+description = "Skin-tone-stratified external validation of eczema-psoriasis classifiers"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Ethan Yu" }, { name = "Nolan Yu" }]
+keywords = [
+    "dermatology",
+    "medical-imaging",
+    "algorithmic-fairness",
+    "external-validation",
+    "skin-tone",
+    "multimodal-learning",
+    "foundation-models",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+]
+dependencies = [
+    "torch>=2.1",
+    "torchvision>=0.16",
+    "numpy>=1.24",
+    "pandas>=2.0",
+    "scikit-learn>=1.3",
+    "scipy>=1.11",
+    "matplotlib>=3.7",
+    "pillow>=10.0",
+    "pyyaml>=6.0",
+    "imagehash>=4.3",
+]
+
+[project.optional-dependencies]
+# Grad-CAM saliency maps (scripts/evaluate/gradcam_atlas.py)
+explain = ["grad-cam>=1.5"]
+# Image-level synthetic data with a pretrained diffusion model (experiments/improvements/synth_*.py)
+synthesis = ["diffusers>=0.30", "transformers>=4.40", "huggingface_hub>=0.23", "safetensors>=0.4", "requests>=2.31"]
+dev = ["pytest>=8.0", "ruff>=0.6"]
+
+[project.urls]
+Repository = "https://github.com/ethany8909/Machine-Learning-in-Eczema-Detection-main"
+
+[tool.setuptools.packages.find]
+include = ["dermafair*"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+extend-exclude = ["data", "results"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = [
+    "E501",  # long lines are left to the formatter
+    "E731",  # small lambdas are used as local helpers
+    "B905",  # zip() without strict= is intentional for equal-length arrays
+    "UP006", "UP007", "UP035", "UP045",  # keep annotations readable on Python 3.10
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]  # re-exports
+# Scripts set matplotlib's backend or sys.path before importing the rest.
+"scripts/**" = ["E402"]
+"experiments/**" = ["E402"]
+# Fold-level closures are always called inside the loop iteration that defines them.
+"experiments/improvements/**" = ["E402", "B023"]
+"examples/**" = ["E402"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["dermafair"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

@@ -1,0 +1,47 @@
+cff-version: 1.2.0
+message: "If you use this code or protocol, please cite it as below."
+title: "DermaFair: Skin-tone-stratified external validation of eczema-psoriasis classifiers"
+type: software
+version: 0.2.0
+date-released: 2026-10-01
+license: MIT
+repository-code: "https://github.com/ethany8909/Machine-Learning-in-Eczema-Detection-main"
+authors:
+  - family-names: Yu
+    given-names: Ethan
+  - family-names: Yu
+    given-names: Nolan
+keywords:
+  - dermatology
+  - medical imaging
+  - algorithmic fairness
+  - external validation
+  - skin tone
+  - multimodal learning
+  - foundation models
+references:
+  - type: article
+    title: "DermaCon-IN: A Multi-concept Annotated Dermatological Image Dataset of Indian Skin Disorders for Clinical AI Research"
+    authors:
+      - family-names: Bhuwalka
+    year: 2025
+    notes: "Internal development cohort (arXiv:2506.06099; Harvard Dataverse doi:10.7910/DVN/W7OUZM)"
+  - type: article
+    title: "Crowdsourcing dermatology images with Google Search Ads: creating a real-world skin condition dataset"
+    authors:
+      - family-names: Ward
+    year: 2024
+    notes: "SCIN, first external test cohort"
+  - type: conference-paper
+    title: "Evaluating deep neural networks trained on clinical images in dermatology with the Fitzpatrick 17k dataset"
+    authors:
+      - family-names: Groh
+    year: 2021
+    collection-title: "Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition Workshops"
+    notes: "Fitzpatrick17k, second external test cohort"
+  - type: article
+    title: "DINOv2: Learning robust visual features without supervision"
+    authors:
+      - family-names: Oquab
+    year: 2024
+    journal: "Transactions on Machine Learning Research"

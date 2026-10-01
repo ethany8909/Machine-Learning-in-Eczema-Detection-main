@@ -1,0 +1,16 @@
+# Exact versions used for the September 2026 analyses (Python 3.14, CPU-only).
+# For a looser install, use `pip install -e .` (see pyproject.toml).
+torch==2.12.1
+torchvision==0.27.1
+numpy==2.5.0
+pandas==3.0.3
+scipy==1.18.0
+scikit-learn==1.9.0
+matplotlib==3.11.0
+pillow==12.3.0
+pyyaml==6.0.3
+imagehash==4.3.2
+
+# Image-level synthetic data (experiments/improvements/synth_images.py)
+diffusers==0.40.0
+transformers==5.17.0

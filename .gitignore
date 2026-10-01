@@ -1,0 +1,58 @@
+# ----------------------------------------------------------------------------
+# Data and outputs never enter version control.
+# The patient images used in this study are licensed for research use and
+# must not be redistributed. Point DERMAFAIR_DATA_DIR at your local copy.
+# ----------------------------------------------------------------------------
+/data/*
+!/data/README.md
+/results/
+
+# Belt and braces: image, array, checkpoint and tabular files anywhere
+*.jpg
+*.jpeg
+*.png
+*.bmp
+*.tif
+*.tiff
+*.webp
+!docs/figures/**/*.png
+*.npz
+*.npy
+*.pt
+*.pth
+*.ckpt
+*.pkl
+*.safetensors
+*.h5
+*.csv
+*.parquet
+
+# Known cohort folders and files, wherever they appear
+DATASET_*/
+dataset*/
+scin_images/
+scin_metadata/
+fitzpatrick17k/
+Skin_Metadata*.csv
+*LOCAL_ONLY*
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+.claude/
