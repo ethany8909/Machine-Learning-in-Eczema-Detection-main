@@ -6,7 +6,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/ethany8909/Machine-Learning-in-Eczema-Detection-main/actions/workflows/ci.yml"><img src="https://github.com/ethany8909/Machine-Learning-in-Eczema-Detection-main/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/ethany8909/dermafair/actions/workflows/ci.yml"><img src="https://github.com/ethany8909/dermafair/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <img src="https://img.shields.io/badge/python-3.10%2B-3776AB?logo=python&logoColor=white" alt="Python 3.10+">
   <img src="https://img.shields.io/badge/PyTorch-2.x-EE4C2C?logo=pytorch&logoColor=white" alt="PyTorch 2.x">
   <img src="https://img.shields.io/badge/code%20style-ruff-261230" alt="Ruff">
@@ -130,7 +130,7 @@ All of it runs on a CPU; nothing requires a GPU.
 ## Getting started
 
 ```bash
-git clone https://github.com/ethany8909/Machine-Learning-in-Eczema-Detection-main.git dermafair
+git clone https://github.com/ethany8909/dermafair.git
 cd dermafair
 python -m venv .venv && source .venv/bin/activate     # Windows: .venv\Scripts\activate
 pip install -e ".[dev]"
@@ -188,7 +188,7 @@ A manuscript describing this work is in preparation. Until then, please cite the
   title   = {DermaFair: Skin-tone-stratified external validation of eczema--psoriasis classifiers},
   year    = {2026},
   version = {0.2.0},
-  url     = {https://github.com/ethany8909/Machine-Learning-in-Eczema-Detection-main}
+  url     = {https://github.com/ethany8909/dermafair}
 }
 ```
 

@@ -5,7 +5,7 @@ type: software
 version: 0.2.0
 date-released: 2026-10-01
 license: MIT
-repository-code: "https://github.com/ethany8909/Machine-Learning-in-Eczema-Detection-main"
+repository-code: "https://github.com/ethany8909/dermafair"
 authors:
   - family-names: Yu
     given-names: Ethan
